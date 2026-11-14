@@ -1,0 +1,28 @@
+# ===== 本地凭证与个人配置（严禁上传） =====
+凭证.json
+config.json
+curl.txt
+cURL.txt
+凭证.txt
+
+# ===== 业务数据缓存（含真实人员与明细） =====
+数据缓存.json
+验货缓存.json
+拍照缓存.json
+last_result.json
+state.json
+
+# ===== 运行产物与日志 =====
+产出看板.html
+诊断结果.txt
+最近拉数输出.txt
+服务日志-*.txt
+backups/
+_shots/
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/

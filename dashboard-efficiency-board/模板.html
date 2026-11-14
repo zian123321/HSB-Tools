@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>收货 · 拆包 · 拍照 · 人效产出看板</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230284c7'/%3E%3Crect x='7' y='18' width='4' height='8' rx='1' fill='white'/%3E%3Crect x='14' y='12' width='4' height='14' rx='1' fill='white'/%3E%3Crect x='21' y='7' width='4' height='19' rx='1' fill='white'/%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" onerror="document.write('<script src=\&quot;https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js\&quot;><\/script>')"></script>
+<style>
+  :root{
+    --bg:#f0f7fc; --card:#ffffff; --ink:#1c2a33; --sub:#5b6b7a; --line:#dbe7f0;
+    --main:#0284c7; --main-dark:#075985; --main-soft:#e0f2fe; --accent:#0ea5e9;
+    --sky:#0284c7; --sky-soft:#e0f2fe;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif; font-size:14px; line-height:1.5;}
+  .num{font-variant-numeric:tabular-nums; letter-spacing:.02em;}
+  [hidden]{display:none !important;}
+
+  header{background:var(--main-dark); color:#fff; padding:16px 20px;}
+  .head-inner{max-width:1200px; margin:0 auto; display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 20px;}
+  header h1{font-size:20px; font-weight:700; letter-spacing:.02em;}
+  header .meta{font-size:12px; color:#bae6fd;}
+  .demo-tag{background:#b91c1c; color:#fff; font-size:12px; font-weight:600; padding:2px 10px; border-radius:999px;}
+
+  .status-bar{max-width:1200px; margin:10px auto 0; padding:0 16px;}
+  .status-inner{display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:10px; padding:8px 14px; font-size:12px; color:var(--sub);}
+  .dot{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle;}
+  .dot.ok{background:#16a34a;} .dot.expired{background:#dc2626;} .dot.error{background:#d97706;} .dot.demo{background:var(--main);}
+  .status-src b{color:var(--ink); font-weight:600;}
+  .status-warn{color:#dc2626; font-weight:600;}
+
+  main{max-width:1200px; margin:0 auto; padding:16px 16px 8px;}
+  section{margin-bottom:16px;}
+
+  .tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+  .tab{border:1px solid var(--line); background:#fff; color:var(--sub); padding:6px 18px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .tab:hover{border-color:var(--sky); color:var(--sky);}
+  .tab.active{background:var(--sky); border-color:var(--sky); color:#fff;}
+
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px;}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px;}
+  .kpi .label{font-size:12px; color:var(--sub);}
+  .kpi .value{font-size:30px; font-weight:700; margin-top:4px; color:var(--ink);}
+  .kpi .sub{font-size:12px; color:var(--sub); margin-top:2px;}
+  .kpi .value small{font-size:14px; font-weight:600; color:var(--sub);}
+
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px;}
+  .panel h2{font-size:15px; font-weight:700; margin-bottom:4px;}
+  .panel .hint{font-size:12px; color:var(--sub); margin-bottom:12px;}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:4px;}
+  .panel-head h2{margin-bottom:0;}
+  .date-label{font-size:12px; color:var(--main); font-weight:700;}
+  .chips{display:flex; gap:6px; overflow-x:auto; padding-bottom:2px; margin-bottom:10px;}
+  .chip{border:1px solid var(--line); background:#fff; color:var(--sub); padding:3px 11px; border-radius:999px; font-size:12px; cursor:pointer; white-space:nowrap; font-family:inherit;}
+  .chip:hover{border-color:var(--sky); color:var(--sky);}
+  .chip.active{background:var(--sky); border-color:var(--sky); color:#fff; font-weight:600;}
+
+  .scroll-x{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  table.heat{width:100%; min-width:880px; border-collapse:collapse; table-layout:fixed; font-size:13px;}
+  table.heat colgroup col.c-user{width:92px;}
+  table.heat colgroup col.c-total{width:84px;}
+  table.heat th,table.heat td{border:1px solid var(--line); padding:5px 2px; text-align:center; vertical-align:middle;}
+  table.heat thead th{background:#f4f7f9; font-weight:600; color:var(--sub); font-size:12px;}
+  table.heat thead th.now{background:var(--sky-soft); color:var(--sky); font-weight:700;}
+  table.heat tbody th{background:#f4f7f9; font-weight:600; text-align:left; padding-left:10px; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  table.heat tbody td.now{border-color:var(--sky);}
+  table.heat td.cell{color:var(--ink); font-weight:600;}
+  table.heat tfoot th,table.heat tfoot td{background:#f4f7f9; font-weight:700; color:var(--ink);}
+  table.heat tfoot th.now{background:var(--sky-soft); color:var(--sky);}
+
+  .charts{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:860px){ .charts{grid-template-columns:1fr;} }
+  @media (max-width:640px){
+    body{font-size:15px;}
+    .kpi .label,.kpi .sub,.panel .hint,footer{font-size:13px;}
+    .kpi .value{font-size:26px;}
+  }
+  .chart-box{height:320px; width:100%;}
+  .chart-fail{color:var(--sub); font-size:13px; padding:12px 0;}
+
+  table.list{width:100%; border-collapse:collapse; table-layout:fixed; font-size:13px;}
+  table.list col:nth-child(1){width:16%;} table.list col:nth-child(2){width:12%;}
+  table.list col:nth-child(3){width:12%;} table.list col:nth-child(4){width:28%;}
+  table.list col:nth-child(5){width:32%;}
+  table.list th,table.list td{border-bottom:1px solid var(--line); padding:7px 8px; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  table.list th{background:#f4f7f9; color:var(--sub); font-weight:600; font-size:12px;}
+
+  footer{max-width:1200px; margin:0 auto; padding:4px 16px 24px; font-size:12px; color:var(--sub); line-height:1.7;}
+  .empty{padding:60px 0; text-align:center; color:var(--sub);}
+</style>
+</head>
+<body>
+<script>window.__DATA__ = __DATA_JSON__;</script>
+  <header>
+    <div class="head-inner">
+      <h1>收货 · 拆包 · 拍照 · 人效产出看板</h1>
+      <span id="demoTag" class="demo-tag" style="display:none;">示例数据</span>
+      <span class="meta" id="metaLine">加载中…</span>
+    </div>
+  </header>
+
+  <div class="status-bar"><div class="status-inner" id="statusBar">加载状态…</div></div>
+
+  <main>
+    <div class="tabs">
+      <button type="button" class="tab active" data-tab="rec">收货记录</button>
+      <button type="button" class="tab" data-tab="unpack">验货拆包</button>
+      <button type="button" class="tab" data-tab="photo">真机拍照</button>
+    </div>
+
+    <!-- ===== 标签页：回收收货 ===== -->
+    <section id="tab-rec">
+      <section class="kpis" id="r-kpis"></section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>每人每小时产出（单数）</h2>
+          <span class="date-label" id="r-heatDateLabel"></span>
+        </div>
+        <div class="chips" id="r-dateChips"></div>
+        <div class="hint" id="r-heatHint"></div>
+        <div class="scroll-x">
+          <table class="heat">
+            <colgroup><col class="c-user"><col span="16"><col class="c-total"></colgroup>
+            <thead id="r-heatHead"></thead>
+            <tbody id="r-heatBody"></tbody>
+            <tfoot id="r-heatFoot"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="charts">
+        <div class="panel">
+          <h2>近 7 天每日产出（按人堆叠）</h2>
+          <div class="hint">柱高 = 当日总单数，颜色 = 操作人</div>
+          <div id="r-chart7" class="chart-box"></div>
+        </div>
+        <div class="panel">
+          <h2>每人近 7 天合计排行</h2>
+          <div class="hint">按 7 天总单数从高到低</div>
+          <div id="r-chartRank" class="chart-box"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>最新收货记录</h2>
+        <div class="hint" id="r-listHint"></div>
+        <div class="scroll-x">
+          <table class="list">
+            <colgroup><col><col><col><col><col></colgroup>
+            <thead><tr id="r-listHead"><th>收货时间</th><th>操作人</th><th>状态</th><th>物流单号</th><th>来源渠道</th></tr></thead>
+            <tbody id="r-listBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- ===== 标签页：验货拆包 ===== -->
+    <section id="tab-unpack" hidden>
+      <section class="kpis" id="u-kpis"></section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>每人每小时拆包（件数）</h2>
+          <span class="date-label" id="u-heatDateLabel"></span>
+        </div>
+        <div class="chips" id="u-dateChips"></div>
+        <div class="hint" id="u-heatHint"></div>
+        <div class="scroll-x">
+          <table class="heat">
+            <colgroup><col class="c-user"><col span="16"><col class="c-total"></colgroup>
+            <thead id="u-heatHead"></thead>
+            <tbody id="u-heatBody"></tbody>
+            <tfoot id="u-heatFoot"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="charts">
+        <div class="panel">
+          <h2>近 7 天每日拆包（按人堆叠）</h2>
+          <div class="hint">柱高 = 当日总件数，颜色 = 操作人</div>
+          <div id="u-chart7" class="chart-box"></div>
+        </div>
+        <div class="panel">
+          <h2>每人近 7 天合计排行</h2>
+          <div class="hint">按 7 天总件数从高到低</div>
+          <div id="u-chartRank" class="chart-box"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>最新拆包记录</h2>
+        <div class="hint" id="u-listHint"></div>
+        <div class="scroll-x">
+          <table class="list">
+            <colgroup><col><col><col><col><col></colgroup>
+            <thead><tr id="u-listHead"><th>拆包时间</th><th>操作人</th><th>状态</th><th>物流单号</th><th>包裹号</th></tr></thead>
+            <tbody id="u-listBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- ===== 标签页：真机拍照 ===== -->
+    <section id="tab-photo" hidden>
+      <section class="kpis" id="ph-kpis"></section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>每人每小时拍照（件数）</h2>
+          <span class="date-label" id="ph-heatDateLabel"></span>
+        </div>
+        <div class="chips" id="ph-dateChips"></div>
+        <div class="hint" id="ph-heatHint"></div>
+        <div class="scroll-x">
+          <table class="heat">
+            <colgroup><col class="c-user"><col span="16"><col class="c-total"></colgroup>
+            <thead id="ph-heatHead"></thead>
+            <tbody id="ph-heatBody"></tbody>
+            <tfoot id="ph-heatFoot"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section class="charts">
+        <div class="panel">
+          <h2>近 7 天每日拍照（按人堆叠）</h2>
+          <div class="hint">柱高 = 当日总件数，颜色 = 操作人</div>
+          <div id="ph-chart7" class="chart-box"></div>
+        </div>
+        <div class="panel">
+          <h2>每人近 7 天合计排行</h2>
+          <div class="hint">按 7 天总件数从高到低</div>
+          <div id="ph-chartRank" class="chart-box"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>最新拍照记录</h2>
+        <div class="hint" id="ph-listHint"></div>
+        <div class="scroll-x">
+          <table class="list">
+            <colgroup><col><col><col><col><col></colgroup>
+            <thead><tr id="ph-listHead"><th>拍照时间</th><th>操作人</th><th>状态</th><th>设备ID</th><th>条码</th></tr></thead>
+            <tbody id="ph-listBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer id="footerNote"></footer>
+
+<script>
+(function(){
+  "use strict";
+  var RAW = window.__DATA__ || {records: [], meta: {}, unpackRecords: [], unpackMeta: {}, photoRecords: [], photoMeta: {}};
+
+  function pad(n){ return n < 10 ? "0" + n : "" + n; }
+  function dateKey(d){ return d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()); }
+  function timeOf(s){
+    if(!s) return null;
+    var d = new Date(String(s).replace(/-/g,"/").replace("T"," "));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  var PAL = ["#0284c7","#0ea5e9","#0369a1","#38bdf8","#60a5fa","#64748b"];
+  var charts = {};          // 已创建图表实例
+  var pendingCharts = {};   // 延迟创建的图表（隐藏标签页首次显示时再建）
+
+  function buildTab(data, p, cfg){
+    var recs = data.records || [], meta = data.meta || {};
+    function $(id){ return document.getElementById(p + "-" + id); }
+
+    var parsed = [];
+    for (var i = 0; i < recs.length; i++){
+      var r = recs[i], t = timeOf(r.time);
+      if (!t) continue;
+      parsed.push({user: r.user || "未知", h: t.getHours(), day: dateKey(t), num: +(r.num || 1),
+                   status: r.status || "", channel: r.channel || "", logistics: r.logistics || "",
+                   ts: t.getTime(), timeStr: (r.time || "").trim()});
+    }
+
+    var root = $("kpis");
+    if (parsed.length === 0){
+      root.innerHTML = '<div class="empty">暂无数据 —— 请先运行 拉数脚本.py（或配置接口后重新生成）。</div>';
+      return;
+    }
+
+    /* ===== 汇总 ===== */
+    var dates = [], seenD = {};
+    for (i = 0; i < parsed.length; i++){ if (!seenD[parsed[i].day]){ seenD[parsed[i].day] = 1; dates.push(parsed[i].day); } }
+    dates.sort(); dates.reverse();
+    var today = dates[0];
+
+    var userDays = {}, dayTotal = {}, todayCount = {}, hourGrid = {}, dayUserHour = {};
+    for (i = 0; i < parsed.length; i++){
+      var pp = parsed[i];
+      userDays[pp.user] = userDays[pp.user] || {};
+      userDays[pp.user][pp.day] = (userDays[pp.user][pp.day] || 0) + pp.num;
+      dayTotal[pp.day] = (dayTotal[pp.day] || 0) + pp.num;
+      dayUserHour[pp.day] = dayUserHour[pp.day] || {};
+      dayUserHour[pp.day][pp.user] = dayUserHour[pp.day][pp.user] || {};
+      dayUserHour[pp.day][pp.user][pp.h] = (dayUserHour[pp.day][pp.user][pp.h] || 0) + pp.num;
+      if (pp.day === today){
+        todayCount[pp.user] = (todayCount[pp.user] || 0) + pp.num;
+        hourGrid[pp.user] = hourGrid[pp.user] || {};
+        hourGrid[pp.user][pp.h] = (hourGrid[pp.user][pp.h] || 0) + pp.num;
+      }
+    }
+
+    var allUsers = Object.keys(userDays).sort(function(a,b){
+      var sa = 0, sb = 0, k;
+      for (k in userDays[a]) sa += userDays[a][k];
+      for (k in userDays[b]) sb += userDays[b][k];
+      return sb - sa;
+    });
+    var users = Object.keys(todayCount).sort(function(a,b){ return (todayCount[b] - todayCount[a]); });
+
+    /* ===== KPI ===== */
+    var todayTotal = 0; for (var u in todayCount) todayTotal += todayCount[u];
+    var total7 = 0; for (var d2 in dayTotal) total7 += dayTotal[d2];
+    var dayCount = Math.min(7, dates.length);
+    var nowH = new Date().getHours();
+    var nowCount = 0; for (u in hourGrid) nowCount += (hourGrid[u][nowH] || 0);
+    var avg = (total7 / dayCount).toFixed(1);
+
+    var kpis = [
+      {label: cfg.kpi1Label || "今日总单数", value: todayTotal, sub: today + "（" + dayCount + "天内日均 " + avg + "）"},
+      {label:"今日在岗人数", value: users.length, sub: "今日有记录的操作人"},
+      {label:"当前小时产出", value: nowCount, sub: nowH + ":00 – " + nowH + ":59"},
+      {label:"近7天合计", value: total7, sub: "覆盖 " + dates.length + " 天"}
+    ];
+    var kpiHtml = "";
+    for (i = 0; i < kpis.length; i++){
+      kpiHtml += '<div class="kpi"><div class="label">' + kpis[i].label + '</div>' +
+                 '<div class="value num">' + kpis[i].value + '</div><div class="sub">' + kpis[i].sub + '</div></div>';
+    }
+    root.innerHTML = kpiHtml;
+
+    /* ===== 热力表（支持按日期切换） ===== */
+    var hourCols = [];
+    for (var hh0 = 8; hh0 <= 23; hh0++) hourCols.push(hh0);
+    var currentDay = today;
+
+    function dayUserSum(o){ var s = 0, k; for (k in o) s += o[k]; return s; }
+
+    function renderHeat(day){
+      var dUh = dayUserHour[day] || {};
+      var dUsers = Object.keys(dUh).sort(function(a,b){ return dayUserSum(dUh[b]) - dayUserSum(dUh[a]); });
+      var maxCell = 1, u, h, ci;
+      for (u in dUh) for (h in dUh[u]) if (dUh[u][h] > maxCell) maxCell = dUh[u][h];
+
+      var headHtml = "<tr><th>操作人</th>";
+      for (ci = 0; ci < hourCols.length; ci++){
+        var cls = hourCols[ci] === nowH ? ' class="now"' : "";
+        headHtml += "<th" + cls + ">" + hourCols[ci] + ":00</th>";
+      }
+      headHtml += '<th class="c-total">当日合计</th></tr>';
+      $("heatHead").innerHTML = headHtml;
+
+      var bodyHtml = "", foot = [];
+      for (ci = 0; ci < hourCols.length; ci++) foot[ci] = 0;
+      for (var ri = 0; ri < dUsers.length; ri++){
+        var nm = dUsers[ri], rowTotal = 0, cells = "";
+        for (ci = 0; ci < hourCols.length; ci++){
+          var hh = hourCols[ci], c = (dUh[nm] && dUh[nm][hh]) || 0;
+          foot[ci] += c; rowTotal += c;
+          var alpha = c > 0 ? Math.min(0.88, 0.10 + 0.78 * (c / maxCell)) : 0;
+          var bg = c > 0 ? "background:rgba(2,132,199," + alpha.toFixed(2) + ");" : "";
+          var fg = alpha > 0.5 ? "color:#fff;" : "";
+          var cCls = hh === nowH ? " now" : "";
+          cells += '<td class="cell' + cCls + '" style="' + bg + fg + '">' + (c || "") + "</td>";
+        }
+        bodyHtml += '<tr><th>' + nm + "</th>" + cells + '<th class="c-total">' + rowTotal + "</th></tr>";
+      }
+      $("heatBody").innerHTML = bodyHtml;
+
+      var daySum = 0;
+      for (ci = 0; ci < hourCols.length; ci++) daySum += foot[ci];
+      var footHtml = '<th>每小时合计</th>';
+      for (ci = 0; ci < hourCols.length; ci++){
+        var fCls = hourCols[ci] === nowH ? ' class="now"' : "";
+        footHtml += "<td" + fCls + ">" + foot[ci] + "</td>";
+      }
+      footHtml += '<th class="c-total">' + daySum + "</th>";
+      $("heatFoot").innerHTML = footHtml;
+      $("heatDateLabel").textContent = (day === today ? "今日" : "所选日期") + " " + day;
+
+      var ch = $("dateChips").querySelectorAll(".chip");
+      for (var ci2 = 0; ci2 < ch.length; ci2++) ch[ci2].classList.toggle("active", ch[ci2].getAttribute("data-day") === day);
+    }
+
+    var chipHtml = "";
+    for (i = 0; i < dates.length; i++){
+      chipHtml += '<button type="button" class="chip' + (dates[i] === today ? " active" : "") + '" data-day="' + dates[i] + '">' + dates[i].slice(5) + "</button>";
+    }
+    $("dateChips").innerHTML = chipHtml;
+    $("dateChips").addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest(".chip") : null;
+      if (!b) return;
+      renderHeat(b.getAttribute("data-day"));
+    });
+    $("heatHint").textContent = cfg.heatHint;
+
+    renderHeat(today);
+
+    /* ===== 近7天堆叠柱 + 每人排行 ===== */
+    var datesAsc = dates.slice().reverse();
+    var createCharts = function(){
+      var c7 = $("chart7"), cR = $("chartRank");
+      if (window.echarts && window.echarts.init){
+        var ch7 = echarts.init(c7);
+        ch7.setOption({
+          tooltip:{trigger:"axis"},
+          legend:{top:0, type:"scroll", textStyle:{fontSize:12}},
+          grid:{left:44, right:16, top:38, bottom:26},
+          xAxis:{type:"category", data: datesAsc, axisTick:{alignWithLabel:true}},
+          yAxis:{type:"value", min:0, splitLine:{lineStyle:{color:"#e8edf2"}}},
+          series: allUsers.map(function(u, idx){
+            return {name:u, type:"bar", stack:"t", barMaxWidth:34, itemStyle:{color:PAL[idx % PAL.length]},
+                    data: datesAsc.map(function(d){ return userDays[u][d] || 0; })};
+          })
+        });
+        charts[p + "-chart7"] = ch7;
+
+        var rank = allUsers.map(function(u){
+          var s = 0, k; for (k in userDays[u]) s += userDays[u][k];
+          return {name:u, v:s};
+        }).sort(function(a,b){ return b.v - a.v; });
+        var chR = echarts.init(cR);
+        chR.setOption({
+          tooltip:{trigger:"axis", axisPointer:{type:"shadow"}},
+          grid:{left:70, right:52, top:10, bottom:24},
+          xAxis:{type:"value", min:0, splitLine:{lineStyle:{color:"#e8edf2"}}},
+          yAxis:{type:"category", data: rank.map(function(r){ return r.name; }), inverse:true},
+          series:[{type:"bar", barMaxWidth:26,
+            data: rank.map(function(r){
+              return {value:r.v, itemStyle:{color:PAL[allUsers.indexOf(r.name) % PAL.length]}};
+            }),
+            label:{show:true, position:"right", fontSize:12, color:"#1d2733"}}]
+        });
+        charts[p + "-chartRank"] = chR;
+      } else {
+        c7.innerHTML = '<p class="chart-fail">图表库未加载（需联网）。数据已统计，可稍后刷新页面重试。</p>';
+        cR.innerHTML = '<p class="chart-fail">图表库未加载（需联网）。数据已统计，可稍后刷新页面重试。</p>';
+      }
+    };
+    if (cfg.deferCharts) pendingCharts[p] = createCharts; else createCharts();
+
+    /* ===== 最新记录 ===== */
+    var latest = parsed.slice().sort(function(a,b){ return b.ts - a.ts; }).slice(0, 15);
+    var listHtml = "";
+    for (i = 0; i < latest.length; i++){
+      var l = latest[i];
+      listHtml += "<tr><td class='num'>" + l.timeStr + "</td><td>" + l.user + "</td><td>" + l.status + "</td><td class='num'>" + l.logistics + "</td><td>" + l.channel + "</td></tr>";
+    }
+    $("listBody").innerHTML = listHtml;
+    $("listHint").textContent = cfg.listHint;
+    var lh = $("listHead");
+    if (lh && lh.cells){
+      lh.cells[0].textContent = cfg.listCol1 || "收货时间";
+      lh.cells[3].textContent = cfg.listCol4 || "物流单号";
+      lh.cells[4].textContent = cfg.listCol5 || "来源渠道";
+    }
+  }
+
+  /* ===== 构建两个标签页（各自独立容错：一页失败不影响另一页） ===== */
+  function safeBuild(data, p, cfg){
+    try {
+      buildTab(data, p, cfg);
+    } catch (e) {
+      var el = document.getElementById(p + "-kpis");
+      if (el) el.innerHTML = '<div class="empty">该页数据构建出错：' + (e && e.message ? e.message : e) + '（若为图表库加载失败，表格统计不受影响）</div>';
+    }
+  }
+
+  safeBuild({records: RAW.records, meta: RAW.meta}, "r", {
+    kpi1Label: "今日总单数", listCol1: "收货时间", listCol4: "物流单号", listCol5: "来源渠道",
+    heatHint: "统计口径：每条收货记录 = 1 单，按收货时间（addTime）所在小时计入。点击上方日期可切换查看任意一天，颜色越深 = 该小时产出越高。",
+    listHint: "按收货时间倒序的最新 15 条。",
+    deferCharts: false
+  });
+  safeBuild({records: RAW.unpackRecords, meta: RAW.unpackMeta}, "u", {
+    kpi1Label: "今日总件数", listCol1: "拆包时间", listCol4: "物流单号", listCol5: "包裹号",
+    heatHint: "统计口径：每条拆包记录 = 1 件，按拆包时间（addTime）所在小时计入。点击上方日期可切换查看任意一天，颜色越深 = 该小时产出越高。",
+    listHint: "按拆包时间倒序的最新 15 条。",
+    deferCharts: true
+  });
+  safeBuild({records: RAW.photoRecords, meta: RAW.photoMeta}, "ph", {
+    kpi1Label: "今日总件数", listCol1: "拍照时间", listCol4: "设备ID", listCol5: "条码",
+    heatHint: "统计口径：每台设备拍照 = 1 件，按拍照时间（createTime）所在小时计入。点击上方日期可切换查看任意一天，颜色越深 = 该小时产出越高。",
+    listHint: "按拍照时间倒序的最新 15 条（条码见末列）。",
+    deferCharts: true
+  });
+
+  /* ===== 头尾信息 ===== */
+  var recMeta = RAW.meta || {}, unpMeta = RAW.unpackMeta || {}, phMeta = RAW.photoMeta || {};
+  document.getElementById("demoTag").style.display = (!!(recMeta.demo || unpMeta.demo || phMeta.demo)) ? "inline-block" : "none";
+  document.getElementById("metaLine").textContent =
+    "收货记录更新于 " + (recMeta.generated_at || "--") +
+    " · 验货拆包更新于 " + (unpMeta.generated_at || "--") +
+    " · 真机拍照更新于 " + (phMeta.generated_at || "--") + " · 内部数据，请勿外传";
+
+  /* ===== 健康状态条：凭证状态 + 各源条数 ===== */
+  (function(){
+    var sb = document.getElementById("statusBar");
+    if (!sb) return;
+    var ST = RAW.status || {};
+    var auth = ST.auth_state || "ok";
+    var dotMap = {ok:["ok","数据正常"], expired:["expired","凭证待更新（请换证）"],
+                  error:["error","部分数据源异常（旧数据兜底）"], timeout:["error","拉数超时（下轮重试）"],
+                  demo:["demo","示例数据"]};
+    var m = dotMap[auth] || dotMap.ok;
+    var html = '<span><span class="dot '+m[0]+'"></span><b>'+m[1]+'</b></span>';
+    if (ST.generated_at) html += '<span>更新于 '+ST.generated_at+'</span>';
+    (ST.sources || []).forEach(function(s){
+      var cls = s.ok ? "" : ' class="status-warn"';
+      html += '<span class="status-src"'+cls+'>'+s.name+' <b>'+(s.count||0)+'</b> 条</span>';
+    });
+    sb.innerHTML = html;
+  })();
+
+  /* ===== 标签页切换 ===== */
+  var tabs = document.querySelectorAll(".tab");
+  var paneRec = document.getElementById("tab-rec"), paneUnpack = document.getElementById("tab-unpack"),
+      panePhoto = document.getElementById("tab-photo");
+  function showTab(name){
+    var i, pr;
+    for (i = 0; i < tabs.length; i++) tabs[i].classList.toggle("active", tabs[i].getAttribute("data-tab") === name);
+    paneRec.hidden = (name !== "rec");
+    paneUnpack.hidden = (name !== "unpack");
+    panePhoto.hidden = (name !== "photo");
+    if (name === "unpack" && pendingCharts["u"]){ try { pendingCharts["u"](); } catch (e) {} pendingCharts["u"] = null; }
+    if (name === "photo" && pendingCharts["ph"]){ try { pendingCharts["ph"](); } catch (e) {} pendingCharts["ph"] = null; }
+    pr = name === "rec" ? "r" : (name === "unpack" ? "u" : "ph");
+    if (charts[pr + "-chart7"]) charts[pr + "-chart7"].resize();
+    if (charts[pr + "-chartRank"]) charts[pr + "-chartRank"].resize();
+  }
+  for (var t2 = 0; t2 < tabs.length; t2++){
+    (function(btn){ btn.addEventListener("click", function(){ showTab(btn.getAttribute("data-tab")); }); })(tabs[t2]);
+  }
+  window.addEventListener("resize", function(){
+    for (var k in charts){ if (charts[k]) charts[k].resize(); }
+  });
+
+  document.getElementById("footerNote").textContent =
+    "口径说明：每条收货记录计 1 单、每条拆包记录计 1 件、每台设备拍照计 1 件；小时按记录时间（addTime / createTime）所在时段统计；“今日”取数据中最新一天。" +
+    "页面每 5 分钟自动刷新，数据由后台常驻服务按配置间隔定时更新。" +
+    "登录凭证到期后运行 python 更新凭证.py 并粘贴一条 Copy as cURL 即可更新。" +
+    "本页面数据仅限获得授权的工作场景使用，请勿外传。";
+
+  // 自动刷新：每 5 分钟重新加载页面（配合定时任务每小时更新数据，实现近实时）
+  setTimeout(function(){ location.reload(); }, 5 * 60 * 1000);
+})();
+</script>
+</body>
+</html>

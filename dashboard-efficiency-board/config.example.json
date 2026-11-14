@@ -1,0 +1,14 @@
+{
+  "_comment": "复制本文件为 config.json 后填入你自己环境的值；config.json 已被 .gitignore 忽略，不会上传到仓库。",
+
+  "days": 7,
+  "page_size": 100,
+  "port": 8899,
+  "interval_seconds": 1800,
+  "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+
+  "_login_comment": "以下三项仅自动登录.py 使用；不启用自动登录可留空。",
+  "login_username": "",
+  "login_password": "",
+  "login_url": "https://app.example-detect.com/"
+}

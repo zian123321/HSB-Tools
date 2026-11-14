@@ -1,0 +1,6 @@
+# 拉数 / 常驻服务 / 诊断 / 换证 必需
+requests>=2.31.0
+
+# 仅「自动登录.py」浏览器自动化需要；不用自动登录可跳过
+playwright>=1.44.0
+# 安装浏览器内核：playwright install chromium
