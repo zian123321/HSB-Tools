@@ -1,0 +1,19 @@
+# 配置与凭证（含账号密码、内网地址，切勿提交）
+config.json
+config.json.bak_*
+
+# Node 依赖
+node_modules/
+
+# 运行产物
+输出文件/
+浏览器数据_*/
+browser-session-*/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 诊断与临时文件
+输出文件/diagnosis/
+*.log

@@ -1,0 +1,20 @@
+{
+  "systemUrl": "http://<WMS_HOST>:<PORT>/gwms_hsb/main.jsf",
+  "browserExecutable": "",
+  "account": "",
+  "password": "",
+  "sourceFile": "",
+  "inventoryReport": "",
+  "warehouse": "<目标仓库名称>",
+  "targetLocation": "<入库库位编码>",
+  "barcodeType": "04",
+  "maxPerOrder": 500,
+  "headless": true,
+  "downloadInventoryAutomatically": true,
+  "createOrdersAutomatically": false,
+  "auditOrders": false,
+  "loginRetries": 2,
+  "harFile": "",
+  "templatePath": "",
+  "templateUrl": ""
+}

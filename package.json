@@ -1,0 +1,14 @@
+{
+  "name": "wms-mover",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WMS 批量移库半自动工具：库存匹配、切块、导入表生成、自动建单与单据文档产出",
+  "type": "module",
+  "scripts": {
+    "check": "node check.mjs .",
+    "start": "powershell -NoProfile -ExecutionPolicy Bypass -File run.ps1"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}
