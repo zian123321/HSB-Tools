@@ -1,0 +1,19 @@
+# 本地敏感配置（含账号、密码、webhook、手机号，禁止提交）
+config.py
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行日志
+*.log
+monitor.log
+
+# IDE / 系统
+.vscode/
+.idea/
+.DS_Store
